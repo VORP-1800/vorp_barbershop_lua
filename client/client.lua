@@ -128,15 +128,31 @@ local function keysx(table)
 end
 
 local function ApplyDataBack(data)
+    local ped = PlayerPedId()
     MenuData.CloseAll()
-    Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), data.hair, true, true, true)
-    if IsPedMale(PlayerPedId()) then
-        Citizen.InvokeNative(0xD3A7B003ED343FD9, PlayerPedId(), data.beard, true, true, true)
+
+    -- first we remove the “hair” and “beard” with meta-components (to remove stuck props)
+    Citizen.InvokeNative(0xD710A5007C2AC539, ped, 0x864B03AE, 0) -- clear HAIR
+    Citizen.InvokeNative(0xD710A5007C2AC539, ped, 0xF8016BCA, 0) -- clear BEARD
+
+    -- then we return what was in the input or specified in data
+    local backHair  = (data and data.hair)  or entryHair  or orghair  or 0
+    local backBeard = (data and data.beard) or entryBeard or orgbeard or 0
+
+    if backHair ~= 0 then
+        Citizen.InvokeNative(0xD3A7B003ED343FD9, ped, backHair, true, true, true)
     end
-    Citizen.InvokeNative(0xCC8CA3E88256E58F, PlayerPedId(), 0, 1, 1, 1, 0)
-    FreezeEntityPosition(PlayerPedId(), false)
-    ClearPedTasks(PlayerPedId())
+    if IsPedMale(ped) and backBeard ~= 0 then
+        Citizen.InvokeNative(0xD3A7B003ED343FD9, ped, backBeard, true, true, true)
+    end
+
+    -- reassembly of the ped
+    Citizen.InvokeNative(0xCC8CA3E88256E58F, ped, 0, 1, 1, 1, 0)
+
+    FreezeEntityPosition(ped, false)
+    ClearPedTasks(ped)
 end
+
 
 function openbarbermenu()
     MenuData.CloseAll()
